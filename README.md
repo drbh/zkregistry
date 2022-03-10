@@ -9,6 +9,6 @@ zargo test
 
 ### References
 
-https://docs.zksync.io/dev/contracts/#zinc
-https://github.com/matter-labs/zinc/tree/main/zinc-book
-https://github.com/ensdomains/ens/blob/master/contracts/ENSRegistry.sol
+https://docs.zksync.io/dev/contracts/#zinc  
+https://github.com/matter-labs/zinc/tree/main/zinc-book  
+https://github.com/ensdomains/ens/blob/master/contracts/ENSRegistry.sol  
