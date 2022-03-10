@@ -1,0 +1,138 @@
+use std::collections::MTreeMap;
+
+//!
+//! The 'zkregistry' contract entry.
+//!
+
+type Address = u160;
+type Bytes32 = [u8; 32];
+
+struct Record {
+    owner: Address,
+    resolver: Address,
+}
+
+contract ZKRegistry {
+    pub records: MTreeMap<Bytes32, Record>;
+
+    pub fn new() -> Self {
+        Self {
+            records: MTreeMap
+        }
+    }
+
+    // setters
+    pub fn set_owner(mut self, node: Bytes32, owner: Address) -> bool {
+        let (record, exists) = self.records.get(node);
+
+        // init new record
+        let blank_resolver: u160 = 0;
+        let mut new_record = Record{ 
+            owner: owner, 
+            resolver: record.resolver
+        };
+
+        // if prexistinng we overwrite
+        if (exists) {
+            new_record.resolver = record.resolver
+        }
+
+        // insert to storage
+        self.records.insert(node, new_record);
+        true
+    }
+
+    pub fn set_resolver(mut self, node: Bytes32, resolver: Address) -> bool {
+        let (record, exists) = self.records.get(node);
+
+        require(exists, "Node does not exist");
+        require(zksync::msg.sender == record.owner, "Sender does not own the node");
+
+        // init new record
+        let blank_owner: u160 = 0;
+        let mut new_record = Record{ 
+            owner: blank_owner, 
+            resolver: resolver
+        };
+
+        // if prexistinng we overwrite
+        if (exists) {
+            new_record.owner = record.owner
+        }
+
+        // insert to storage
+        self.records.insert(node, new_record);
+        true
+    }
+
+    // getters
+    pub fn owner(self, node: Bytes32) -> Address {
+        let (record, exists) = self.records.get(node);
+        record.owner
+    }
+
+    pub fn resolver(self, node: Bytes32) -> Address {
+        let (record, exists) = self.records.get(node);
+        record.resolver
+    }
+
+    pub fn record_exists(self, node: Bytes32) -> bool {
+        let (record, exists) = self.records.get(node);
+        let blank_owner: u160 = 0;
+        record.owner != blank_owner
+    }
+}
+
+
+#[test]
+fn set_owner_test() {
+    let mut my_registry = ZKRegistry::new();
+
+    let owner = 0x9BAf952a829d2D8612C19Ed0e86c4Ed0e31817A1;
+    let node: Bytes32 = [0; 32];
+
+    require!(my_registry.set_owner(node, owner), "set_owner failed");
+}
+
+#[test]
+fn get_owner_test() {
+    let mut my_registry = ZKRegistry::new();
+
+    let owner = 0x9BAf952a829d2D8612C19Ed0e86c4Ed0e31817A1;
+    let node: Bytes32 = [0; 32];
+
+    require!(my_registry.set_owner(node, owner), "set_owner failed");
+
+    let fetched_owner = my_registry.owner(node);
+
+    require!(fetched_owner == owner, "My test");
+}
+
+#[test]
+fn record_exists_test() {
+    let mut my_registry = ZKRegistry::new();
+
+    let node: Bytes32 = [0; 32];
+
+    require!(my_registry.record_exists(node) == false, "My test");
+}
+
+
+#[test]
+fn set_record_test() {
+    let mut my_registry = ZKRegistry::new();
+
+    let node: Bytes32 = [0; 32];
+    let owner: Address = 0x0;
+    let resolver: Address = 0x9BAf952a829d2D8612C19Ed0e86c4Ed0e31817A2;
+
+    require!(my_registry.set_owner(node, owner), "set_owner failed");
+    require!(my_registry.set_resolver(node, resolver), "set_resolver failed");
+
+    let fetched_owner = my_registry.owner(node);
+    let fetched_resolver = my_registry.resolver(node);
+
+    require!(fetched_owner == owner, "My test");
+    require!(fetched_resolver == resolver, "My test");
+
+}
